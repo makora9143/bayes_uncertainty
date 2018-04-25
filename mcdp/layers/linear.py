@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 from torch.autograd import Function
 
-
 class HeteroLinearFunction(Function):
 
     @staticmethod
@@ -67,28 +66,13 @@ class HeteroLinear(nn.Module):
         )
 
 
-class GaussianLinear(nn.Linear):
-    def __init__(self, in_features, out_features, scale=None, bias=True):
-        super(GaussianLinear, self).__init__(in_features, out_features, bias=True)
-        self.scale = scale
 
-        self.weight = nn.Parameter(torch.Tensor(out_features, in_features))
-        if bias:
-            self.bias = nn.Parameter(torch.Tensor(out_features))
-        else:
-            self.register_parameter('bias', None)
+class PriorLinear(nn.Linear):
+    def __init__(self, in_features, out_features, l, bias=True):
+        self.l = l
+        super(PriorLinear, self).__init__(in_features, out_features, bias=True)
 
-        self.weight.data.normal_(0., math.sqrt(1./in_features))
-        if bias is not None:
-            self.bias.data.zero_()
-
-
-class Flatten(nn.Module):
-    def __init__(self):
-        super(Flatten, self).__init__()
-
-    def forward(self,x):
-        batch_size = x.size(0)
-        return x.view(batch_size, -1)
-
-
+    def reset_parameters(self):
+        self.weight.data.normal_(0, 1./(self.l) ** 2)
+        if self.bias is not None:
+            self.bias.data.normal_(0, 1./(self.l) ** 2)

@@ -17,13 +17,15 @@ from mcdp.models import HeteroMCDropout
 from mcdp.dataset import PointDataset
 from mcdp.loss import HeteroGaussianNLLLoss
 
+device = 'cpu'
 
 def train_epoch(model, creterion, dataloader, optimizer):
+    global device
     model.predict()
     losses = 0
     for x, y in dataloader:
         optimizer.zero_grad()
-        x, y = Variable(x), Variable(y)
+        x, y = x.to(device), y.to(device)
         mean, sigma2 = model(x)
         # loss = creterion(mean, y)
         loss = creterion(mean, y, 1./sigma2)
@@ -33,12 +35,12 @@ def train_epoch(model, creterion, dataloader, optimizer):
     return losses / len(dataloader) / dataloader.batch_size
 
 def test(model, dataloader):
-    model.mc()
     with torch.autograd.no_grad():
+        model.mc()
         x, y = iter(dataloader).next()
     # x, y = Variable(x), Variable(y)
-    mean, var = model(x)
-    return mean, torch.sqrt(var)
+        mean, var = model(x)
+        return mean, torch.sqrt(var)
 
 def xsin(x):
     return x * torch.sin(x)
@@ -119,4 +121,6 @@ if __name__ == '__main__':
                         help='data length frequency')
 
     args = parser.parse_args()
+    global device
+    device = torch.device('cpu')
     main(args)
