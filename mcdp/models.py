@@ -3,11 +3,13 @@ import itertools
 import torch
 import torch.nn as nn
 
-from .layers import HeteroLinear, GaussianLinear, Flatten
+from .layers.linear import HeteroLinear
+from .layers.misc import Flatten
+from .layers.dropout import MCDropout
 
-class MCDropout(nn.Module):
+class MCDropoutReg(nn.Module):
     def __init__(self, drop_p=0.1, hidden=20, sampling=100):
-        super(MCDropout, self).__init__()
+        super(MCDropoutReg, self).__init__()
         self.net = nn.Sequential(
 
             # nn.Dropout(0.05),
@@ -49,9 +51,9 @@ class MCDropout(nn.Module):
 
 
 
-class HeteroMCDropout(MCDropout):
+class HeteroMCDropoutReg(MCDropoutReg):
     def __init__(self, drop_p=0.1, hidden=20, sampling=100):
-        super(HeteroMCDropout, self).__init__(drop_p=0.1, hidden=20, sampling=100)
+        super(HeteroMCDropoutReg, self).__init__(drop_p=0.1, hidden=20, sampling=100)
         self.net = nn.Sequential(
             # nn.Dropout(0.05),
             nn.Linear(1, hidden),
@@ -93,7 +95,7 @@ class HeteroMCDropout(MCDropout):
         return var
 
 
-class MCLeNet(MCDropout):
+class MCLeNet(MCDropoutReg):
 
     def __init__(self, drop_p=0.1, hidden=20, sampling=100):
         super(MCLeNet, self).__init__(drop_p=0.1, hidden=20, sampling=100)
@@ -122,4 +124,32 @@ class MCLeNet(MCDropout):
         else:
             result = self.net(x)
         return result
+
+
+class BNNet(nn.Module):
+    def __init__(self, p=0.5, l=1, L=4, hidden=10):
+        super(Net, self).__init__()
+
+        self.net = nn.ModuleList()
+        
+        self.net.append(nn.Sequential(
+                            PriorLinear(1, hidden, l),
+                            nn.ReLU(),
+                            MCDropout(p),
+                        )
+                    )
+
+        for i in range(L-1):
+            tmp = nn.Sequential(
+                PriorLinear(hidden, hidden, l),
+                nn.ReLU(),
+                MCDropout(p)
+            )
+            self.net.append(tmp)
+
+        self.net.append(PriorLinear(hidden, 1, l))
+
+    def forward(self, x):
+        return self.net(x)
+
 

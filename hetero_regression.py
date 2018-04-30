@@ -13,7 +13,7 @@ import matplotlib.animation as anime
 
 from tqdm import tqdm
 
-from mcdp.models import HeteroMCDropout
+from mcdp.models import HeteroMCDropoutReg
 from mcdp.dataset import PointDataset
 from mcdp.loss import HeteroGaussianNLLLoss
 
@@ -27,7 +27,6 @@ def train_epoch(model, creterion, dataloader, optimizer):
         optimizer.zero_grad()
         x, y = x.to(device), y.to(device)
         mean, sigma2 = model(x)
-        # loss = creterion(mean, y)
         loss = creterion(mean, y, 1./sigma2)
         loss.backward()
         optimizer.step()
@@ -38,7 +37,6 @@ def test(model, dataloader):
     with torch.autograd.no_grad():
         model.mc()
         x, y = iter(dataloader).next()
-    # x, y = Variable(x), Variable(y)
         mean, var = model(x)
         return mean, torch.sqrt(var)
 
@@ -54,7 +52,7 @@ def main(args):
     test_dataset = PointDataset(low=-12, high=12, function=func)
     testloader = data.DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
     
-    model = HeteroMCDropout(args.drop_p, args.units, args.sampling)
+    model = HeteroMCDropoutReg(args.drop_p, args.units, args.sampling)
     print(model)
 
     l2_decay = args.l2 * (1 - args.drop_p) / (2 * args.N)

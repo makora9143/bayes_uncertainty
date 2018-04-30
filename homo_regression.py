@@ -13,13 +13,12 @@ import matplotlib.animation as anime
 
 from tqdm import tqdm
 
-from mcdp.models import MCDropout
+from mcdp.models import MCDropoutReg
 from mcdp.dataset import PointDataset
 
 
 def train_epoch(model, creterion, dataloader, optimizer):
-    model.train()
-    model.not_estimate()
+    model.predict()
     losses = 0
     for x, y in dataloader:
         optimizer.zero_grad()
@@ -32,8 +31,7 @@ def train_epoch(model, creterion, dataloader, optimizer):
     return losses / len(dataloader)
 
 def test(model, creterion, dataloader):
-    model.estimate()
-    model.train()
+    model.mc()
     x, y = iter(dataloader).next()
     x, y = Variable(x), Variable(y)
     predict, var, result = model(x)
@@ -52,7 +50,7 @@ def main(args):
     test_dataset = PointDataset(low=-7, high=7, function=xsin)
     testloader = data.DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
     
-    model = MCDropout(args.drop_p, args.units, args.sampling)
+    model = MCDropoutReg(args.drop_p, args.units, args.sampling)
     print(model)
 
     optimizer = optim.Adam(model.parameters(), weight_decay=args.lam)

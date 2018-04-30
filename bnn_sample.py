@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from mcdp.layers.dropout import MCDropout
-from mcdp.layers.linear import PriorLinear
+from mcdp.layers.linear import GaussianLinear
 
 import matplotlib.pyplot as plt
 
@@ -23,16 +23,16 @@ def plot(l, k, func, idx):
     activation = activations[func]
 
     drop = nn.Sequential(
-        PriorLinear(1, k, l),
+        GaussianLinear(1, k, l),
         activation(),
         MCDropout(), 
-        PriorLinear(k, k, l),
+        GaussianLinear(k, k, l),
         activation(),
         MCDropout(), 
-        PriorLinear(k, k, l),
+        GaussianLinear(k, k, l),
         activation(),
         MCDropout(), 
-        PriorLinear(k, 1, l)
+        GaussianLinear(k, 1, l)
     )
 
     x = torch.linspace(-2, 2, 100).view(-1, 1)

@@ -67,10 +67,10 @@ class HeteroLinear(nn.Module):
 
 
 
-class PriorLinear(nn.Linear):
+class GaussianLinear(nn.Linear):
     def __init__(self, in_features, out_features, l, bias=True):
         self.l = l
-        super(PriorLinear, self).__init__(in_features, out_features, bias=True)
+        super(GaussianLinear, self).__init__(in_features, out_features, bias=True)
 
     def reset_parameters(self):
         self.weight.data.normal_(0, 1./(self.l) ** 2)
